@@ -1262,17 +1262,25 @@ static EVENT_HANDLER(MOUSE_DRAGGED)
             window_manager_move_window(g_mouse_state.window, new_point.x, new_point.y);
         }
     } else if (g_mouse_state.current_action == MOUSE_MODE_RESIZE) {
-        uint64_t event_time = read_os_timer();
-        float dt = ((float) event_time - g_mouse_state.last_moved_time) * (1000.0f / (float)read_os_freq());
-        if (dt < 67.67f) goto out;
+
+        //
+        // NOTE: Resize at up to ~60 fps. The interval is measured from the end of the previous resize,
+        // so that applications that are slow to apply a new frame cannot cause a backlog of events.
+        //
+        // The new frame is computed from the frame at mouse-down and the total cursor delta, instead of
+        // the cached frame, because the AX notifications for the previous resize may still be queued;
+        // applying a delta to an outdated frame would make the window drift away from the cursor.
+        //
+
+        float dt = ((float) read_os_timer() - g_mouse_state.last_moved_time) * (1000.0f / (float)read_os_freq());
+        if (dt < 16.67f) goto out;
 
         int dx = point.x - g_mouse_state.down_location.x;
         int dy = point.y - g_mouse_state.down_location.y;
 
-        window_manager_resize_window_relative_internal(g_mouse_state.window, g_mouse_state.window->frame, g_mouse_state.direction, dx, dy, false);
+        window_manager_resize_window_relative_internal(g_mouse_state.window, g_mouse_state.window_frame, g_mouse_state.direction, dx, dy, false);
 
-        g_mouse_state.last_moved_time = event_time;
-        g_mouse_state.down_location = point;
+        g_mouse_state.last_moved_time = read_os_timer();
     }
 
     struct view *src_view = window_manager_find_managed_window(&g_window_manager, g_mouse_state.window);
