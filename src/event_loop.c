@@ -1329,7 +1329,13 @@ static EVENT_HANDLER(MOUSE_DRAGGED)
                 insert_feedback_show(b_node);
                 g_mouse_state.feedback_node = b_node;
             }
-        } else if (!b_node) {
+        } else {
+
+            //
+            // NOTE: Also clear the feedback when hovering the node that the window is being dragged from
+            // (a window being dragged out of a stack, over its own stack), as dropping it there is a no-op.
+            //
+
             if (g_mouse_state.feedback_node) {
                 g_mouse_state.feedback_node->insert_dir = 0;
                 insert_feedback_destroy(g_mouse_state.feedback_node);
