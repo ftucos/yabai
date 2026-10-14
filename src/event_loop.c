@@ -1324,6 +1324,16 @@ static EVENT_HANDLER(MOUSE_DRAGGED)
             } break;
             }
 
+            //
+            // NOTE: a space with the stack layout always stacks the dropped window
+            // onto its root node, regardless of which edge was targeted, so the
+            // feedback should cover the entire node instead of suggesting a split.
+            //
+
+            if (insert_dir && dst_view->layout == VIEW_STACK) {
+                insert_dir = STACK;
+            }
+
             if (b_node->insert_dir != insert_dir) {
                 b_node->insert_dir = insert_dir;
                 insert_feedback_show(b_node);
